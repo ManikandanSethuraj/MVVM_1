@@ -3,6 +3,8 @@ package com.androiddevs.mvvmnewsapp.ui
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.Query
+import com.androiddevs.mvvmnewsapp.api.RetrofitInstance
 import com.androiddevs.mvvmnewsapp.models.NewsResponse
 import com.androiddevs.mvvmnewsapp.repository.NewsRepository
 import com.androiddevs.mvvmnewsapp.util.Resource
@@ -24,9 +26,12 @@ val newsRepository: NewsRepository
      * Whenever there is a change in this LiveData (postValue function below), the fragments get notified about it through observers
      */
     val breakingNews : MutableLiveData<Resource<NewsResponse>> = MutableLiveData()
+    val searchNews : MutableLiveData<Resource<NewsResponse>> = MutableLiveData()
+
 
     // The Page number is implemented here because if it is implemented in the Fragment the value can be changed on Screen rotation.
     var breakingNewsPage = 1
+    var searchNewsPage = 1
 
     init {
         getBreakingNews("us")
@@ -54,12 +59,19 @@ val newsRepository: NewsRepository
     }
 
 
+   fun getSearchNews(query: String) = viewModelScope.launch {
+           searchNews.postValue(Resource.Loading())
+           val response = RetrofitInstance.api.searchForNews(query, searchNewsPage)
+       searchNews.postValue(handleSearchNews(response))
+
+   }
+
     // The response from the NewsRepository data is extracted : checking if the response is successful or not
     /**
      * @param response is of Retrofit Response
      * @return NewsResponse
      */
-    fun handleBreakingNewsResponse(response: Response<NewsResponse>) : Resource<NewsResponse>  {
+  private fun handleBreakingNewsResponse(response: Response<NewsResponse>) : Resource<NewsResponse>  {
         if (response.isSuccessful){
             response.body()?.let { newsResponse ->
                 return Resource.Success(newsResponse)
@@ -68,6 +80,14 @@ val newsRepository: NewsRepository
         return Resource.Error(response.message())
     }
 
+   private fun handleSearchNews(response: Response<NewsResponse>) : Resource<NewsResponse> {
+        if (response.isSuccessful){
+          response.body()?.let {
+              return Resource.Success(it)
+          }
+        }
+        return Resource.Error(response.message())
+    }
 
 
 }
