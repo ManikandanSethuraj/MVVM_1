@@ -9,6 +9,8 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.androiddevs.mvvmnewsapp.R
 import com.androiddevs.mvvmnewsapp.adapters.NewsAdapter
+import com.androiddevs.mvvmnewsapp.ui.NewsActivity
+import com.androiddevs.mvvmnewsapp.ui.NewsViewModel
 import com.androiddevs.mvvmnewsapp.util.Resource
 import kotlinx.android.synthetic.main.fragment_search_news.*
 import kotlinx.coroutines.*
@@ -19,10 +21,13 @@ class SearchNewsFragment : BasicFragment(R.layout.fragment_search_news){
 
     private val TAG = "SearchNewsFragment"
     private lateinit var newsAdapter : NewsAdapter
+    private lateinit var newsViewModel : NewsViewModel
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         newsAdapter = NewsAdapter()
+        newsViewModel = (activity as NewsActivity).newsViewModel
         setUpRecyclerView()
         var job : Job ?= null
         etSearch.addTextChangedListener { editableTxt ->
@@ -31,13 +36,13 @@ class SearchNewsFragment : BasicFragment(R.layout.fragment_search_news){
                 delay(500L)
                 editableTxt?.let {
                     if (editableTxt.toString().isNotEmpty()){
-                        newsviewModel.getSearchNews(editableTxt.toString())
+                        newsViewModel.getSearchNews(editableTxt.toString())
                     }
                 }
             }
         }
 
-         newsviewModel.searchNews.observe(viewLifecycleOwner, Observer {
+        newsViewModel.searchNews.observe(viewLifecycleOwner, Observer {
              when(it){
                  is Resource.Success -> {
                      hideProgressBar()

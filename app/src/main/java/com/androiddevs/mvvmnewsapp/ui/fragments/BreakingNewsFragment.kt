@@ -19,27 +19,27 @@ class BreakingNewsFragment : BasicFragment(R.layout.fragment_breaking_news) {
 
     private val TAG = "BreakingNewsFragment"
 
-   // lateinit var newsViewModel: NewsViewModel
+    lateinit var newsViewModel: NewsViewModel
     lateinit var newsAdapter: NewsAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setUpRecyclerView()
 
+        newsViewModel = (activity as NewsActivity).newsViewModel
 
-
-     newsviewModel.breakingNews.observe(viewLifecycleOwner, Observer { response ->
+        newsViewModel.breakingNews.observe(viewLifecycleOwner, Observer { response ->
          when(response){
              is Resource.Success -> {
 
 
-                 // Just Running it late to
+                 // Just Running it late Handler is used, not required.
 
                  Handler().postDelayed(Runnable {
                      hideProgressBar()
                      response.data?.let {
                          newsAdapter.differ.submitList(response.data.articles)
-                     } }, 5000)
+                     } }, 0)
 
 
              }

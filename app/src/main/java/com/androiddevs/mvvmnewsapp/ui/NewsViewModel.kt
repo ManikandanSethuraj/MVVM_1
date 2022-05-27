@@ -61,7 +61,7 @@ val newsRepository: NewsRepository
 
    fun getSearchNews(query: String) = viewModelScope.launch {
            searchNews.postValue(Resource.Loading())
-           val response = RetrofitInstance.api.searchForNews(query, searchNewsPage)
+           val response = newsRepository.getSearchNews(query, searchNewsPage)
        searchNews.postValue(handleSearchNews(response))
 
    }
