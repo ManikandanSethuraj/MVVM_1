@@ -14,6 +14,10 @@ interface ArticleDAO {
     @Query("SELECT * FROM articles")
     fun getAllArticles() : LiveData<List<Article>>
 
+
+    @Query("SELECT COUNT(*) FROM articles")
+    fun getTotalCount() : Int
+
     @Delete
     suspend fun deleteArticle(article: Article)
 

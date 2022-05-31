@@ -1,13 +1,17 @@
 package com.androiddevs.mvvmnewsapp.ui
 
+import android.util.Log
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Query
 import com.androiddevs.mvvmnewsapp.api.RetrofitInstance
+import com.androiddevs.mvvmnewsapp.models.Article
 import com.androiddevs.mvvmnewsapp.models.NewsResponse
 import com.androiddevs.mvvmnewsapp.repository.NewsRepository
 import com.androiddevs.mvvmnewsapp.util.Resource
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
@@ -31,7 +35,9 @@ val newsRepository: NewsRepository
 
     // The Page number is implemented here because if it is implemented in the Fragment the value can be changed on Screen rotation.
     var breakingNewsPage = 1
+    var breakingNewsResponse : NewsResponse ?= null
     var searchNewsPage = 1
+    var searchNewsResponse : NewsResponse ?= null
 
     init {
         getBreakingNews("us")
@@ -44,15 +50,10 @@ val newsRepository: NewsRepository
      */
 
     fun getBreakingNews(countryCode : String) = viewModelScope.launch {
-
-
         breakingNews.postValue(Resource.Loading())
-
-
 
         // The NewsRepository's getBreakingNews returns Retrofit response.
         val response = newsRepository.getBreakingNews(countryCode, breakingNewsPage)
-
 
         // Post the Response value
         breakingNews.postValue(handleBreakingNewsResponse(response))
@@ -74,7 +75,16 @@ val newsRepository: NewsRepository
   private fun handleBreakingNewsResponse(response: Response<NewsResponse>) : Resource<NewsResponse>  {
         if (response.isSuccessful){
             response.body()?.let { newsResponse ->
-                return Resource.Success(newsResponse)
+
+                breakingNewsPage++
+                if (breakingNewsResponse == null){
+                    breakingNewsResponse = newsResponse
+                }else{
+                    var oldResponse = breakingNewsResponse?.articles
+                    var newResponse = newsResponse?.articles
+                    oldResponse?.addAll(newResponse)
+                }
+                return Resource.Success(breakingNewsResponse ?: newsResponse)
             }
         }
         return Resource.Error(response.message())
@@ -83,11 +93,37 @@ val newsRepository: NewsRepository
    private fun handleSearchNews(response: Response<NewsResponse>) : Resource<NewsResponse> {
         if (response.isSuccessful){
           response.body()?.let {
-              return Resource.Success(it)
+              searchNewsPage++
+              if (searchNewsResponse == null){
+                  searchNewsResponse = it
+              }else{
+                  var oldResponse = searchNewsResponse?.articles
+                  var newResponse = it?.articles
+                  oldResponse?.addAll(newResponse)
+              }
+              return Resource.Success(searchNewsResponse ?: it)
           }
         }
         return Resource.Error(response.message())
     }
 
+
+
+    fun upsertArticle(article: Article) =
+        viewModelScope.launch {
+           val value = newsRepository.upsertArticle(article)
+            val total = newsRepository.totalCount()
+            Log.d("NewViewModel::", total.toString())
+        }
+
+
+    fun totalSavedCount() = newsRepository.totalCount()
+
+    fun getArticles()  = newsRepository.getAllSavedArticles()
+
+    fun deleteArticle(article: Article) =
+        viewModelScope.launch {
+            newsRepository.deleteArticle(article)
+        }
 
 }

@@ -50,7 +50,7 @@ class NewsAdapter : RecyclerView.Adapter<NewsAdapter.ArticleViewHolder>() {
             tvDescription.text = article.description
             tvPublishedAt.text = article.publishedAt
             tvTitle.text = article.title
-            tvSource.text = article.source.name
+            tvSource.text = article.source?.name
             Glide.with(this).load(article.urlToImage).into(ivArticleImage)
             setOnClickListener { onClickListenser?.let { it(article) } }
         }
@@ -61,7 +61,7 @@ class NewsAdapter : RecyclerView.Adapter<NewsAdapter.ArticleViewHolder>() {
     private var onClickListenser : ((Article) -> Unit)? = null
 
 
-    private fun setOnItemClickListenser(listener: (Article) -> Unit){
+    fun setOnItemClickListenser(listener: (Article) -> Unit){
         onClickListenser = listener
     }
 

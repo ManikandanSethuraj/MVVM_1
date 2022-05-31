@@ -9,12 +9,12 @@ import com.androiddevs.mvvmnewsapp.ui.NewsViewModel
 
 open class BasicFragment(contentLayoutId : Int) : Fragment(contentLayoutId) {
 
-    lateinit var newsviewModel: NewsViewModel
+   // lateinit var newsviewModel: NewsViewModel
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        newsviewModel = (activity as NewsActivity).newsViewModel
+      //  newsviewModel = (activity as NewsActivity).newsViewModel
 
     }
 

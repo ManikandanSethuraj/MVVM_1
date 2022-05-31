@@ -10,7 +10,7 @@ import com.androiddevs.mvvmnewsapp.models.Article
 // Determines the database class
 @Database(
     entities = [Article::class],
-    version = 1
+    version = 2
 )
 @TypeConverters(Convertors::class)
 abstract class ArticleDatabase : RoomDatabase() {
@@ -41,7 +41,10 @@ abstract class ArticleDatabase : RoomDatabase() {
                 context.applicationContext,
                 ArticleDatabase::class.java,
                 "article_db.db"
-            ).build()
+            )
+                .allowMainThreadQueries()
+                .fallbackToDestructiveMigration()
+                .build()
 
 
 
