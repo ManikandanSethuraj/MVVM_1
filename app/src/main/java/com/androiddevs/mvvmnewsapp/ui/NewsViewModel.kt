@@ -1,11 +1,15 @@
 package com.androiddevs.mvvmnewsapp.ui
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.ConnectivityManager.*
+import android.net.NetworkCapabilities.*
+import android.net.TransportInfo
+import android.os.Build
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import androidx.room.Query
+import com.androiddevs.mvvmnewsapp.NewsApplication
 import com.androiddevs.mvvmnewsapp.api.RetrofitInstance
 import com.androiddevs.mvvmnewsapp.models.Article
 import com.androiddevs.mvvmnewsapp.models.NewsResponse
@@ -13,6 +17,7 @@ import com.androiddevs.mvvmnewsapp.repository.NewsRepository
 import com.androiddevs.mvvmnewsapp.util.Resource
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import okio.IOException
 import retrofit2.Response
 
 
@@ -21,8 +26,9 @@ import retrofit2.Response
  */
 
 class NewsViewModel(
+    app: NewsApplication,
 val newsRepository: NewsRepository
-) : ViewModel()  {
+) : AndroidViewModel(app)  {
 
 
     /**
@@ -50,22 +56,65 @@ val newsRepository: NewsRepository
      */
 
     fun getBreakingNews(countryCode : String) = viewModelScope.launch {
-        breakingNews.postValue(Resource.Loading())
 
-        // The NewsRepository's getBreakingNews returns Retrofit response.
-        val response = newsRepository.getBreakingNews(countryCode, breakingNewsPage)
+        safeGetBreakingNews(countryCode)
 
-        // Post the Response value
-        breakingNews.postValue(handleBreakingNewsResponse(response))
+    //        breakingNews.postValue(Resource.Loading())
+//
+//        // The NewsRepository's getBreakingNews returns Retrofit response.
+//        val response = newsRepository.getBreakingNews(countryCode, breakingNewsPage)
+//
+//        // Post the Response value
+//        breakingNews.postValue(handleBreakingNewsResponse(response))
     }
 
 
-   fun getSearchNews(query: String) = viewModelScope.launch {
-           searchNews.postValue(Resource.Loading())
-           val response = newsRepository.getSearchNews(query, searchNewsPage)
-       searchNews.postValue(handleSearchNews(response))
+   private suspend fun safeGetBreakingNews(countryCode: String){
+       breakingNews.postValue(Resource.Loading())
+       try {
+           if (checkInternetConnection()){
+               // The NewsRepository's getBreakingNews returns Retrofit response.
+               val response = newsRepository.getBreakingNews(countryCode, breakingNewsPage)
+
+               // Post the Response value
+               breakingNews.postValue(handleBreakingNewsResponse(response))
+           }else{
+               breakingNews.postValue(Resource.Error("No Internet Connection"))
+           }
+       } catch (t : Throwable){
+           when(t){
+               is IOException -> breakingNews.postValue(Resource.Error("Network Failure"))
+               else -> breakingNews.postValue(Resource.Error("Conversation Error"))
+           }
+       }
 
    }
+
+   fun getSearchNews(query: String) = viewModelScope.launch {
+       safeGetSearchNews(query)
+   //           searchNews.postValue(Resource.Loading())
+//           val response = newsRepository.getSearchNews(query, searchNewsPage)
+//       searchNews.postValue(handleSearchNews(response))
+
+   }
+
+    private suspend fun safeGetSearchNews(query: String){
+        searchNews.postValue(Resource.Loading())
+        try {
+            if (checkInternetConnection()){
+                val response = newsRepository.getSearchNews(query, searchNewsPage)
+                searchNews.postValue(handleSearchNews(response))
+            }else{
+                searchNews.postValue(Resource.Error("No Internet Connection"))
+            }
+
+        }catch (t : Throwable){
+            when(t){
+                is IOException -> searchNews.postValue(Resource.Error("Network Failure"))
+                else -> searchNews.postValue(Resource.Error("Conversation Error"))
+            }
+        }
+    }
 
     // The response from the NewsRepository data is extracted : checking if the response is successful or not
     /**
@@ -125,5 +174,39 @@ val newsRepository: NewsRepository
         viewModelScope.launch {
             newsRepository.deleteArticle(article)
         }
+
+
+
+
+    private fun checkInternetConnection() : Boolean {
+        val connectivityManager = getApplication<NewsApplication>().getSystemService(
+            Context.CONNECTIVITY_SERVICE
+        ) as ConnectivityManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            val activeNetwork = connectivityManager.activeNetwork?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+
+                return when{
+                    capabilities.hasTransport(TRANSPORT_WIFI) ->  true
+                    capabilities.hasTransport(TRANSPORT_CELLULAR) -> true
+                    capabilities.hasTransport(TRANSPORT_ETHERNET) -> true
+                    else -> false
+                }
+
+        }else{
+            connectivityManager.activeNetworkInfo?.run {
+                return when(type){
+                    TYPE_WIFI -> true
+                    TYPE_ETHERNET -> true
+                    TYPE_MOBILE -> true
+                    else -> false
+                }
+            }
+        }
+        return false
+
+
+    }
 
 }

@@ -5,6 +5,7 @@ import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.widget.AbsListView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -48,6 +49,7 @@ class BreakingNewsFragment : BasicFragment(R.layout.fragment_breaking_news) {
                  hideProgressBar()
                  response.message?.let {
                      Log.d(TAG,"Error happened $it")
+                     Toast.makeText(context, "Error happened $it",Toast.LENGTH_LONG ).show()
                  }
              }
 
