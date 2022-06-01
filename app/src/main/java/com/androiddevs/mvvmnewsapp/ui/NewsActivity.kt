@@ -35,6 +35,7 @@ class NewsActivity : AppCompatActivity() {
 
         newsViewModel = ViewModelProvider(this, newsViewModelProviderFactory).get(NewsViewModel::class.java)
 
+
         bottomNavigationView.setupWithNavController(newsNavHostFragment.findNavController())
 
     }
